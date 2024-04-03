@@ -1,0 +1,10 @@
+
+
+[workspace]
+members = [
+    "client",
+    "server",
+    "data_layer",
+    "async_runtime"
+]
+

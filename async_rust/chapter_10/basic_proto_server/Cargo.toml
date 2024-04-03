@@ -1,0 +1,9 @@
+
+
+[workspace]
+members = [
+    "client",
+    "server",
+    "data_layer"
+]
+
