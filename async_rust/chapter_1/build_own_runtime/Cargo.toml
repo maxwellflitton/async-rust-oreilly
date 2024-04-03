@@ -1,0 +1,12 @@
+[package]
+name = "build_own_runtime"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-task = "4.4.0"
+futures-lite = "1.12.0"
+once_cell = "1.17.1"
+flume = "0.10.14"
