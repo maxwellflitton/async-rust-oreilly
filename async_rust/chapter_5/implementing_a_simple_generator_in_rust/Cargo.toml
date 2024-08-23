@@ -1,0 +1,6 @@
+[package]
+name = "implementing_a_simple_generator_in_rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]

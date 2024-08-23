@@ -1,0 +1,6 @@
+[package]
+name = "calling_a_coroutine_from_a_coroutine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
