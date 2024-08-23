@@ -1,4 +1,8 @@
 use std::ptr;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{Context, Poll};
+
 
 struct SelfReferential {
     data: String,
@@ -19,6 +23,25 @@ impl SelfReferential {
     fn print(&self) {
         unsafe {
             println!("{}", *self.self_pointer);
+        }
+    }
+}
+
+
+struct SimpleFuture {
+    count: u32,
+}
+
+impl Future for SimpleFuture {
+    type Output = u32;
+
+    fn poll(self: &mut Self, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        if self.count < 3 {
+            self.count += 1;
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        } else {
+            Poll::Ready(self.count)
         }
     }
 }
