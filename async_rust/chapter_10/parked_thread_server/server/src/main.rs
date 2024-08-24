@@ -1,10 +1,14 @@
-use std::net::{TcpListener, TcpStream};
-use std::io::{Read, Write, ErrorKind, Cursor};
-use std::sync::{mpsc::channel, atomic::{AtomicBool, Ordering}};
-use std::thread;
-
+use std::{
+    thread,
+    sync::{mpsc::channel, atomic::{AtomicBool, Ordering}},
+    io::{self, Read, Write, ErrorKind, Cursor},
+    net::{TcpListener, TcpStream}
+};
 use data_layer::data::Data;
-use async_runtime::executor;
+use async_runtime::{
+    executor::Executor,
+    sleep::Sleep
+};
 
 
 static FLAGS: [AtomicBool; 3] = [
@@ -12,6 +16,32 @@ static FLAGS: [AtomicBool; 3] = [
     AtomicBool::new(false),
     AtomicBool::new(false),
 ];
+
+
+macro_rules! spawn_worker {
+    ($name:expr, $rx:expr, $flag:expr) => {
+        thread::spawn(move || {
+            let mut executor = Executor::new();
+            loop {
+                if let Ok(stream) = $rx.try_recv() {
+                    println!(
+                        "{} Received connection: {}", 
+                        $name, 
+                        stream.peer_addr().unwrap()
+                    );
+                    executor.spawn(handle_client(stream));
+                } else {
+                    if executor.polling.len() == 0 {
+                        println!("{} is sleeping", $name);
+                        $flag.store(true, Ordering::SeqCst);
+                        thread::park();
+                    }
+                }
+                executor.poll();
+            }
+        })
+    };
+}
 
 
 async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
@@ -46,6 +76,7 @@ async fn handle_client(mut stream: TcpStream) -> std::io::Result<()> {
             println!("Failed to decode message: {}", e);
         }
     }
+    Sleep::new(std::time::Duration::from_secs(1)).await;
     stream.write_all(b"Hello, client!")?;
     Ok(())
 }
@@ -60,57 +91,10 @@ fn main() {
     let (two_tx, two_rx) = channel::<TcpStream>();
     let (three_tx, three_rx) = channel::<TcpStream>();
 
-    let one = thread::spawn(move || {
-        let mut executor = executor::Executor::new();
-        loop {
-            if let Ok(stream) = one_rx.try_recv() {
-                println!("One Received connection: {}", stream.peer_addr().unwrap());
-                executor.spawn(handle_client(stream));
-            }
-            else {
-                if executor.polling.len() == 0 {
-                    println!("One is sleeping");
-                    FLAGS[0].store(true, Ordering::SeqCst);
-                    thread::park();
-                }
-            }
-            executor.poll();
-        }
-    });
-    let two = thread::spawn(move || {
-        let mut executor = executor::Executor::new();
-        loop {
-            if let Ok(stream) = two_rx.try_recv() {
-                println!("Two Received connection: {}", stream.peer_addr().unwrap());
-                executor.spawn(handle_client(stream));
-            }
-            else {
-                if executor.polling.len() == 0 {
-                    println!("Two is sleeping");
-                    FLAGS[1].store(true, Ordering::SeqCst);
-                    thread::park();
-                }
-            }
-            executor.poll();
-        }
-    });
-    let three = thread::spawn(move || {
-        let mut executor = executor::Executor::new();
-        loop {
-            if let Ok(stream) = three_rx.try_recv() {
-                println!("Three Received connection: {}", stream.peer_addr().unwrap());
-                executor.spawn(handle_client(stream));
-            }
-            else {
-                if executor.polling.len() == 0 {
-                    println!("Three is sleeping");
-                    FLAGS[2].store(true, Ordering::SeqCst);
-                    thread::park();
-                }
-            }
-            executor.poll();
-        }
-    });
+    let one = spawn_worker!("One", one_rx, &FLAGS[0]);
+    let two = spawn_worker!("Two", two_rx, &FLAGS[1]);
+    let three = spawn_worker!("Three", three_rx, &FLAGS[2]);
+
     let router = [one_tx, two_tx, three_tx];
     let threads = [one, two, three];
     let mut index = 0;
