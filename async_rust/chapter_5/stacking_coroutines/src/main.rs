@@ -13,14 +13,14 @@ struct WriteCoroutine {
 }
 
 impl WriteCoroutine {
-    fn new(path: &str) -> Self {
-        Self {
-            file_handle: OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path) 
-                .unwrap(),
-        }
+    fn new(path: &str) -> io::Result<Self> {
+
+        let file_handle = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+
+        Ok(Self { file_handle })
     }
 }
 
@@ -76,7 +76,7 @@ struct CoroutineManager{
 impl CoroutineManager {
     fn new(read_path: &str, write_path: &str) -> io::Result<Self> {
         let reader = ReadCoroutine::new(read_path)?;
-        let writer = WriteCoroutine::new(write_path);
+        let writer = WriteCoroutine::new(write_path)?;
 
         Ok(Self {
             reader,

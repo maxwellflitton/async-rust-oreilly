@@ -21,14 +21,14 @@ struct WriteCoroutine {
 }
 
 impl WriteCoroutine {
-    fn new(path: &str) -> Self {
-        Self {
-            file_handle: OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path) 
-                .unwrap(),
-        }
+    fn new(path: &str) -> io::Result<Self> {
+
+        let file_handle = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)?;
+
+        Ok(Self { file_handle })
     }
 }
 
@@ -103,7 +103,7 @@ impl SymmetricCoroutine for WriteCoroutine {
 
 fn main() -> io::Result<()> {
     let mut reader = ReadCoroutine::new("numbers.txt")?;
-    let mut writer = WriteCoroutine::new("output.txt");
+    let mut writer = WriteCoroutine::new("output.txt")?;
 
     loop {
         let number = Pin::new(&mut reader).resume_with_input(());
