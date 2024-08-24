@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 data_layer = { path = "../data_layer" }
+async_runtime = { path = "../async_runtime" }
