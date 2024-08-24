@@ -1,10 +1,10 @@
-use async_trait::async_trait;
+use std::future::Future;
 
 
-#[async_trait]
 pub trait AsyncProcess<X, Z> {
 
-    async fn get_result(&self, key: X) -> Result<Z, String>;
+    fn get_result(&self, key: X) -> impl Future<
+    Output = Result<Z, String>> + Send + 'static;
 
 }
 
@@ -12,11 +12,8 @@ pub trait AsyncProcess<X, Z> {
 async fn do_something<T>(async_handle: T, input: i32) -> Result<i32, String> 
     where T: AsyncProcess<i32, i32> + Send + Sync + 'static
 {
-    let future = tokio::task::spawn(async move {
-        async_handle.get_result(input).await
-    });
     println!("something is happening");
-    let result: i32 = future.await.unwrap()?;
+    let result: i32 = async_handle.get_result(input).await?;
     if result > 10 {
         return Err("result is too big".to_string());
     }
@@ -25,10 +22,6 @@ async fn do_something<T>(async_handle: T, input: i32) -> Result<i32, String>
     }
     Ok(result * 3)
 }
-
-
-// Pin<Box<dyn Future<Output = T> + Send + 'static>>
-
 
 
 fn main() {
@@ -42,12 +35,14 @@ mod get_team_processes_tests {
     use super::*;
     use mockall::predicate::*;
     use mockall::mock;
+    use std::boxed::Box;
 
     mock! {
         DatabaseHandler {}
-        #[async_trait]
+
         impl AsyncProcess<i32, i32> for DatabaseHandler {
-            async fn get_result(&self, key: i32) -> Result<i32, String>;
+            fn get_result(&self, key: i32) -> impl Future<
+            Output = Result<i32, String>> + Send + 'static;
         }
     }
 
@@ -57,7 +52,11 @@ mod get_team_processes_tests {
 
         handle.expect_get_result()
                  .with(eq(4))
-                 .returning(|_|{Ok(11)});
+                 .returning(
+                    |_|{
+                        Box::pin(async move { Ok(11) })
+                    }
+                );
 
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all()
                                                                    .build()
