@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::sync::atomic::{AtomicI16, AtomicBool};
 use core::sync::atomic::Ordering;
 use std::sync::LazyLock;
@@ -9,8 +9,8 @@ use std::task::Context;
 use std::time::{Instant, Duration};
 
 use device_query::{DeviceEvents, DeviceState};
-use device_query::device_events::CallbackGuard;
 use std::io::{self, Write};
+use std::sync::Mutex;
 
 
 static TEMP: LazyLock<Arc<AtomicI16>> = LazyLock::new(|| {
@@ -29,22 +29,11 @@ static DEVICE_STATE: LazyLock<Arc<DeviceState>> = LazyLock::new(|| {
     Arc::new(DeviceState::new())
 });
 
-pub fn render(temp: i16, desired_temp: i16, heat_on: bool, input: String) {
-    clearscreen::clear().unwrap();
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-    println!("Temperature: {}\nDesired Temp: {}\nHeater On: {}", 
-    temp as f32 / 100.0, 
-    desired_temp as f32 / 100.0, 
-    heat_on);
-    print!("Input: {}", input);
-    handle.flush().unwrap();
-}
-
 
 pub struct DisplayFuture {
     pub temp_snapshot: i16,
 }
+
 
 impl DisplayFuture {
     pub fn new() -> Self {
@@ -54,15 +43,15 @@ impl DisplayFuture {
     }
 }
 
-
 impl Future for DisplayFuture {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) 
+        -> Poll<Self::Output> {
         let current_snapshot = TEMP.load(Ordering::SeqCst);
         let desired_temp = DESIRED_TEMP.load(Ordering::SeqCst);
         let heat_on = HEAT_ON.load(Ordering::SeqCst);
-        let input = INPUT.lock().unwrap().clone();
+
         if current_snapshot == self.temp_snapshot {
             cx.waker().wake_by_ref();
             return Poll::Pending
@@ -73,13 +62,16 @@ impl Future for DisplayFuture {
         else if current_snapshot > desired_temp && heat_on == true {
             HEAT_ON.store(false, Ordering::SeqCst);
         }
-        render(current_snapshot, desired_temp, heat_on, input);
+        clearscreen::clear().unwrap();
+        println!("Temperature: {}\nDesired Temp: {}\nHeater On: {}",
+        current_snapshot as f32 / 100.0, 
+        desired_temp as f32 / 100.0, 
+        heat_on);
         self.temp_snapshot = current_snapshot;
         cx.waker().wake_by_ref();
         return Poll::Pending
     }
-    }
-
+}
 
 pub struct HeaterFuture {
     pub time_snapshot: Instant,
@@ -96,6 +88,7 @@ impl HeaterFuture {
 impl Future for HeaterFuture {
     type Output = ();
 
+
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if HEAT_ON.load(Ordering::SeqCst) == false {
             self.time_snapshot = Instant::now();
@@ -103,7 +96,8 @@ impl Future for HeaterFuture {
             return Poll::Pending
         }
         let current_snapshot = Instant::now();
-        if current_snapshot.duration_since(self.time_snapshot) < Duration::from_secs(3) {
+        if current_snapshot.duration_since(self.time_snapshot) <
+                                        Duration::from_secs(3) {
             cx.waker().wake_by_ref();
             return Poll::Pending
         }
@@ -113,7 +107,6 @@ impl Future for HeaterFuture {
         return Poll::Pending
     }
 }
-
 
 pub struct HeatLossFuture {
     pub time_snapshot: Instant,
@@ -130,9 +123,11 @@ impl HeatLossFuture {
 impl Future for HeatLossFuture {
     type Output = ();
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) ->
+                                          Poll<Self::Output> {
         let current_snapshot = Instant::now();
-        if current_snapshot.duration_since(self.time_snapshot) > Duration::from_secs(3) {
+        if current_snapshot.duration_since(self.time_snapshot) >
+                                        Duration::from_secs(3) {
             TEMP.fetch_sub(1, Ordering::SeqCst);
             self.time_snapshot = Instant::now();
         }
@@ -141,23 +136,17 @@ impl Future for HeatLossFuture {
     }
 }
 
-fn print_events() {
-    let _guard = DEVICE_STATE.on_key_down(|key| {
-        clearscreen::clear().unwrap();
-        let mut input = INPUT.lock().unwrap();
-        input.push_str(&key.to_string());
-        // *input = key.to_string();
-        std::mem::drop(input);
-        render(
-            TEMP.load(Ordering::SeqCst), 
-            DESIRED_TEMP.load(Ordering::SeqCst), 
-            HEAT_ON.load(Ordering::SeqCst), 
-            INPUT.lock().unwrap().clone()
-        );
-     });
-    loop {}
+pub fn render(temp: i16, desired_temp: i16, heat_on: bool, input: String) {
+    clearscreen::clear().unwrap();
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    println!("Temperature: {}\nDesired Temp: {}\nHeater On: {}", 
+    temp as f32 / 100.0, 
+    desired_temp as f32 / 100.0, 
+    heat_on);
+    print!("Input: {}", input);
+    handle.flush().unwrap();
 }
-
 
 #[tokio::main]
 async fn main() {
