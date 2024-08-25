@@ -26,9 +26,6 @@ fn do_something<T>(async_handle: T, input: i32) -> Result<i32, String>
 }
 
 
-// Pin<Box<dyn Future<Output = T> + Send + 'static>>
-
-
 
 fn main() {
     println!("Hello, world!");
@@ -42,6 +39,7 @@ mod get_team_processes_tests {
     use mockall::predicate::*;
     use mockall::mock;
 
+
     mock! {
         DatabaseHandler {}
         impl AsyncProcess<i32, String, i32> for DatabaseHandler {
@@ -53,6 +51,8 @@ mod get_team_processes_tests {
 
     #[test]
     fn do_something_fail() {
+
+        // Arrange
         let mut handle = MockDatabaseHandler::new();
 
         handle.expect_spawn()
@@ -63,7 +63,10 @@ mod get_team_processes_tests {
                  .with(eq("test_key".to_string()))
                  .returning(|_|{Ok(11)});
 
+        // Act
         let outcome = do_something(handle, 4);
+
+        // Assert
         assert_eq!(outcome, Err("result is too big".to_string()));
     }
 
