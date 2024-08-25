@@ -52,11 +52,11 @@ async fn main() {
     });
     person_one.await.unwrap();
 
-    let person_one = tokio::task::spawn(async {
+    let person_two = tokio::task::spawn(async {
         let coffee_mug_step = prep_coffee_mug();
         let coffee_step = make_coffee();
         let toast_step = make_toast();
         tokio::join!(coffee_mug_step, coffee_step, toast_step);
     });
-    person_one.await.unwrap();
+    person_two.await.unwrap();
 }

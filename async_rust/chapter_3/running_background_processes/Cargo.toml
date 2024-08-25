@@ -8,5 +8,4 @@ edition = "2021"
 [dependencies]
 async-task = "4.4.0"
 futures-lite = "1.12.0"
-once_cell = "1.17.1"
 flume = "0.10.14"
