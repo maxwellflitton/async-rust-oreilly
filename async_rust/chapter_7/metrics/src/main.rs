@@ -1,7 +1,7 @@
 use tokio_util::task::LocalPoolHandle;
 use std::cell::UnsafeCell;
 use std::collections::HashMap;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use tokio::signal::unix::{signal, SignalKind};
 
 
@@ -28,7 +28,7 @@ async fn something(number: u32) {
 }
 
 
-static RUNTIME: Lazy<LocalPoolHandle> = Lazy::new(|| {
+static RUNTIME: LazyLock<LocalPoolHandle> = LazyLock::new(|| {
     LocalPoolHandle::new(4)
 });
 
@@ -46,14 +46,15 @@ fn extract_data_from_thread() -> HashMap<u32, u32> {
 async fn get_complete_count() -> HashMap<u32, u32> {
     let mut complete_counter = HashMap::new();
     let mut extracted_counters = Vec::new();
-
     for i in 0..4 {
-        extracted_counters.push(RUNTIME.spawn_pinned_by_idx(|| async move {
-            extract_data_from_thread()
-        }, i));
+        extracted_counters.push(RUNTIME.spawn_pinned_by_idx(||
+                                                            async move {
+                                                                extract_data_from_thread()
+                                                            }, i));
     }
     for counter_future in extracted_counters {
-        let extracted_counter = counter_future.await.unwrap_or_default();
+        let extracted_counter = counter_future.await
+            .unwrap_or_default();
         for (key, count) in extracted_counter {
             *complete_counter.entry(key).or_insert(0) += count;
         }
