@@ -35,7 +35,7 @@ struct SimpleFuture {
 impl Future for SimpleFuture {
     type Output = u32;
 
-    fn poll(self: &mut Self, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         if self.count < 3 {
             self.count += 1;
             cx.waker().wake_by_ref();
