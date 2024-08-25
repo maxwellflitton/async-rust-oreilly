@@ -22,6 +22,7 @@ use std::task::{Context, Poll};
 
 use std::collections::VecDeque;
 use std::sync::{Condvar, Mutex};
+use std::io::ErrorKind;
 
 const SERVER: Token = Token(0);
 const CLIENT: Token = Token(1);
@@ -62,6 +63,11 @@ impl Future for ServerFuture {
                         }
                         Ok(_) => {
                             break;
+                        }
+                        Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
+                            // If the stream would block, return Poll::Pending and set the waker.
+                            cx.waker().wake_by_ref();
+                            return Poll::Pending;
                         }
                         Err(e) => {
                             eprintln!("Error reading from stream: {}", e);
