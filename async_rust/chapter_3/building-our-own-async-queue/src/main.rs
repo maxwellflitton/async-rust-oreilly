@@ -14,26 +14,20 @@ where
     T: Send + 'static,
 {
     static QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
-         let (tx, rx) = flume::unbounded::<Runnable>();
-
-        for _ in 0..3 {
-        let receiver = rx.clone();
+        let (tx, rx) = flume::unbounded::<Runnable>();
         thread::spawn(move || {
-            while let Ok(runnable) = receiver.recv() {
+            while let Ok(runnable) = rx.recv() {
+                println!("runnable accepted");
                 let _ = catch_unwind(|| runnable.run());
-                }
-            });
-        }
+            }
+        });
         tx
     });
-
     let schedule = |runnable| QUEUE.send(runnable).unwrap();
     let (runnable, task) = async_task::spawn(future, schedule);
-
     runnable.schedule();
     println!("Here is the queue count: {:?}", QUEUE.len());
     return task
-
 }
 
 
@@ -43,14 +37,11 @@ struct CounterFuture {
 impl Future for CounterFuture {
     type Output = u32;
 
-
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) 
         -> Poll<Self::Output> {
         self.count += 1;
         println!("polling with result: {}", self.count);
         std::thread::sleep(Duration::from_secs(1));
-
-
         if self.count < 3 {
             cx.waker().wake_by_ref();
         Poll::Pending
@@ -60,18 +51,14 @@ impl Future for CounterFuture {
     }
 }
 
-
 async fn async_fn() {
     std::thread::sleep(Duration::from_secs(1));
     println!("async fn");
 }
 
-
 fn main() {
     let one = CounterFuture { count: 0 };
     let two = CounterFuture { count: 0 };
-
-
     let t_one = spawn_task(one);
     let t_two = spawn_task(two);
     let t_three = spawn_task(async {
