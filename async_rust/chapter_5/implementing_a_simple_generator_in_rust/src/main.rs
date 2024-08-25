@@ -46,5 +46,6 @@ fn main() -> io::Result<()> {
             CoroutineState::Complete(()) => break,
         }
     }
+
     Ok(())
 }

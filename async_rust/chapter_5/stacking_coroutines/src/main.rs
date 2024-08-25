@@ -14,12 +14,10 @@ struct WriteCoroutine {
 
 impl WriteCoroutine {
     fn new(path: &str) -> io::Result<Self> {
-
         let file_handle = OpenOptions::new()
             .create(true)
             .append(true)
             .open(path)?;
-
         Ok(Self { file_handle })
     }
 }
