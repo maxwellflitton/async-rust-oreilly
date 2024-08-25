@@ -18,3 +18,4 @@ Cargo.lock
 async_rust/chapter_5/why_use_coroutines/numbers.txt
 async_rust/chapter_5/why_use_coroutines/numbers.txt
 
+numbers.txt
