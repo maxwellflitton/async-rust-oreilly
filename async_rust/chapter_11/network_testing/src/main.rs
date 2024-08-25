@@ -1,10 +1,4 @@
 
-
-
-// Pin<Box<dyn Future<Output = T> + Send + 'static>>
-
-
-
 fn main() {
     println!("Hello, world!");
 }
@@ -35,7 +29,11 @@ mod tests {
         .create();
 
 
-        let runtime = Builder::new_current_thread().enable_io().build().unwrap();
+        let runtime = Builder::new_current_thread()
+            .enable_io()
+            .enable_time()
+            .build()
+            .unwrap();
         let mut handles = vec![];
 
         for _ in 0..5 {
