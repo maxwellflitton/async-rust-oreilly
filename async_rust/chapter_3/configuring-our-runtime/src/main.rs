@@ -22,14 +22,14 @@ where
     T: Send + 'static,
 {
     static HIGH_CHANNEL: LazyLock<(Sender<Runnable>, Receiver<Runnable>)> = LazyLock::new(|| 
-    {flume::unbounded::<Runnable>()}
+        {flume::unbounded::<Runnable>()}
     );
     static LOW_CHANNEL: LazyLock<(Sender<Runnable>, Receiver<Runnable>)> = LazyLock::new(|| 
         {flume::unbounded::<Runnable>()}
     );
-
     static HIGH_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
-        let high_num = std::env::var("HIGH_NUM").unwrap().parse::<usize>().unwrap();
+        let high_num = std::env::var("HIGH_NUM").unwrap().parse::<usize>()
+                                                         .unwrap();
         for _ in 0..high_num {
             let high_receiver = HIGH_CHANNEL.1.clone();
             let low_receiver = LOW_CHANNEL.1.clone();
@@ -55,9 +55,9 @@ where
         }
         HIGH_CHANNEL.0.clone()
     });
-
     static LOW_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
-        let low_num = std::env::var("LOW_NUM").unwrap().parse::<usize>().unwrap();
+        let low_num = std::env::var("LOW_NUM").unwrap().parse::<usize>()
+                                                       .unwrap();
         for _ in 0..low_num {
             let high_receiver = HIGH_CHANNEL.1.clone();
             let low_receiver = LOW_CHANNEL.1.clone();
@@ -81,9 +81,8 @@ where
                 }
             });
         }
-        HIGH_CHANNEL.0.clone()
+        LOW_CHANNEL.0.clone()
     });
-
     let schedule_high = |runnable| HIGH_QUEUE.send(runnable).unwrap();
     let schedule_low = |runnable| LOW_QUEUE.send(runnable).unwrap();
 
@@ -101,18 +100,14 @@ struct CounterFuture {
     count: u32
 }
 
-
 impl Future for CounterFuture {
     type Output = u32;
-
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) 
         -> Poll<Self::Output> {
         self.count += 1;
         println!("polling with result: {}", self.count);
         std::thread::sleep(Duration::from_secs(1));
-
-
         if self.count < 3 {
             cx.waker().wake_by_ref();
         Poll::Pending
@@ -121,7 +116,6 @@ impl Future for CounterFuture {
         }
     }
 }
-
 
 async fn async_fn() {
     std::thread::sleep(Duration::from_secs(1));
@@ -149,7 +143,6 @@ macro_rules! join {
     };
 }
 
-
 macro_rules! try_join {
     ($($future:expr),*) => {
         {
@@ -169,10 +162,10 @@ struct Runtime {
     low_num: usize,
 }
 
-
 impl Runtime {
     pub fn new() -> Self {
-        let num_cores = std::thread::available_parallelism().unwrap().get();
+        let num_cores = std::thread::available_parallelism().unwrap()
+                                                            .get();
         Self {
             high_num: num_cores - 2,
             low_num: 1,
@@ -189,15 +182,12 @@ impl Runtime {
     pub fn run(&self) {
         std::env::set_var("HIGH_NUM", self.high_num.to_string());
         std::env::set_var("LOW_NUM", self.low_num.to_string());
-
+    
         let high = spawn_task!(async {}, FutureType::High);
         let low = spawn_task!(async {}, FutureType::Low);
         join!(high, low);
     }
-
 }
-
-
 
 fn main() {
     Runtime::new().with_low_num(2).with_high_num(4).run();
