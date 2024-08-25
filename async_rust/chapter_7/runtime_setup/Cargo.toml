@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.33.0", features = ["full"] }
-flume = "0.11.0"
