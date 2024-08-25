@@ -2,12 +2,12 @@ use std::future::Future;
 use std::time::Duration;
 use tokio::runtime::{Builder, Runtime};
 use tokio::task::JoinHandle;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 
 mod different_runtimes;
 
 
-static RUNTIME: Lazy<Runtime> = Lazy::new(|| {
+static RUNTIME: LazyLock<Runtime> = LazyLock::new(|| {
     Builder::new_multi_thread()
         .worker_threads(4)
         .max_blocking_threads(1)
