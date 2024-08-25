@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.26.0", features = ["full"] }
-once_cell = "1.18.0"
 clearscreen = "2.0.1"
 device_query = "1.1.3"
