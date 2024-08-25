@@ -1,13 +1,13 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use tokio::runtime::{Runtime, Builder};
 use tokio::task::JoinHandle;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-pub type AddFutMap = Lazy<Arc<Mutex<HashMap<String, JoinHandle<i32>>>>>;
+pub type AddFutMap = LazyLock<Arc<Mutex<HashMap<String, JoinHandle<i32>>>>>;
 
 
-static TOKIO_RUNTIME: Lazy<Runtime> = Lazy::new(|| {
+static TOKIO_RUNTIME: LazyLock<Runtime> = LazyLock::new(|| {
     Builder::new_multi_thread()
         .enable_all()
         .build()
@@ -24,7 +24,7 @@ async fn async_add(a: i32, b: i32) -> i32 {
 
 
 fn add_handler(a: Option<i32>, b: Option<i32>, id: Option<String>) -> Result<(Option<i32>, Option<String>), String> {
-    static MAP: AddFutMap = Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
+    static MAP: AddFutMap = LazyLock::new(|| Arc::new(Mutex::new(HashMap::new())));
     
     match (a, b, id) {
         (Some(a), Some(b), None) => {
