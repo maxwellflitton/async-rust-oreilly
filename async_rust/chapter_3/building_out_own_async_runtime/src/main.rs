@@ -2,11 +2,11 @@ use std::{future::Future, panic::catch_unwind, thread};
 use std::time::{Duration, Instant};
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use std::sync::LazyLock;
 
 
 use async_task::{Runnable, Task};
 use futures_lite::future;
-use once_cell::sync::Lazy;
 
 
 fn spawn_task<F, T>(future: F) -> Task<T>
@@ -14,7 +14,7 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    static QUEUE: Lazy<flume::Sender<Runnable>> = Lazy::new(|| {
+    static QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
         let (tx, rx) = flume::unbounded::<Runnable>();
 
         thread::spawn(move || {
