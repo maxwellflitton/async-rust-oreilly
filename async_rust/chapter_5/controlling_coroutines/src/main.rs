@@ -1,15 +1,11 @@
-#![feature(coroutines)]
-#![feature(coroutine_trait)]
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::ops::{Coroutine, CoroutineState};
-use std::pin::Pin;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::collections::VecDeque;
-use std::time::Instant;
+#![feature(coroutines, coroutine_trait)]
+use std::{
+    ops::{Coroutine, CoroutineState},
+    pin::Pin,
+    time::Duration,
+};
 use rand::Rng;
-use std::time::Duration;
+
 
 struct RandCoRoutine {
     pub value: u8,
@@ -74,9 +70,12 @@ fn main() {
     println!("Total: {}", total);
 
     let (sender, reciever) = std::sync::mpsc::channel::<RandCoRoutine>();
-    let thread = std::thread::spawn(move || {
+    let _thread = std::thread::spawn(move || {
         loop {
-            let mut coroutine = reciever.recv().unwrap();
+            let mut coroutine = match reciever.recv() {
+                Ok(coroutine) => coroutine,
+                Err(_) => break,
+            };
             match Pin::new(&mut coroutine).resume(()) {
                 CoroutineState::Yielded(result) => {
                     println!("Coroutine yielded: {}", result);

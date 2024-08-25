@@ -1,13 +1,12 @@
-#![feature(coroutines)]
-#![feature(coroutine_trait)]
-use std::fs::File;
-use std::io::{self, BufRead, BufReader};
-use std::ops::{Coroutine, CoroutineState};
-use std::pin::Pin;
-use std::fs::OpenOptions;
-use std::io::Write;
-use std::collections::VecDeque;
-use std::time::Instant;
+#![feature(coroutines, coroutine_trait)]
+use std::{
+    collections::VecDeque,
+    future::Future,
+    ops::{Coroutine, CoroutineState},
+    pin::Pin,
+    task::{Context, Poll},
+    time::Instant,
+};
 
 
 struct SleepCoroutine {
@@ -65,6 +64,7 @@ impl Executor {
             coroutines: VecDeque::new(),
         }
     }
+
     fn add(&mut self, coroutine: Pin<Box<
         dyn Coroutine<(), Yield = (), Return = ()>>>) 
     {
@@ -83,6 +83,7 @@ impl Executor {
     }
 }
 
+
 fn main() {
     let mut executor = Executor::new();
 
@@ -98,32 +99,3 @@ fn main() {
     }
     println!("Took {:?}", start.elapsed());
 }
-
-// fn main() {
-//     let mut sleep_coroutines = VecDeque::new();
-//     sleep_coroutines.push_back(
-//         SleepCoroutine::new(std::time::Duration::from_secs(1))
-//     );
-//     sleep_coroutines.push_back(
-//         SleepCoroutine::new(std::time::Duration::from_secs(1))
-//     );
-//     sleep_coroutines.push_back(
-//         SleepCoroutine::new(std::time::Duration::from_secs(1))
-//     );
-
-//     let mut counter = 0;
-//     let start = Instant::now();
-
-//     while counter < sleep_coroutines.len() {
-//         let mut coroutine = sleep_coroutines.pop_front().unwrap();
-//         match Pin::new(&mut coroutine).resume(()) {
-//             CoroutineState::Yielded(_) => {
-//                 sleep_coroutines.push_back(coroutine);
-//             },
-//             CoroutineState::Complete(_) => {
-//                 counter += 1;
-//             },
-//         }
-//     }
-//     println!("Took {:?}", start.elapsed());
-// }
