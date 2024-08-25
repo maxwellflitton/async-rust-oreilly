@@ -15,3 +15,5 @@ Cargo.lock
 
 .DS_Store
 .idea
+async_rust/chapter_5/why_use_coroutines/numbers.txt
+
