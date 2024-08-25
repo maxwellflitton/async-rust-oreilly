@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicI16, AtomicBool};
 use core::sync::atomic::Ordering;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use std::future::Future;
 use std::task::Poll;
 use std::pin::Pin;
@@ -13,19 +13,19 @@ use device_query::device_events::CallbackGuard;
 use std::io::{self, Write};
 
 
-static TEMP: Lazy<Arc<AtomicI16>> = Lazy::new(|| {
+static TEMP: LazyLock<Arc<AtomicI16>> = LazyLock::new(|| {
     Arc::new(AtomicI16::new(2090))
 });
-static DESIRED_TEMP: Lazy<Arc<AtomicI16>> = Lazy::new(|| {
+static DESIRED_TEMP: LazyLock<Arc<AtomicI16>> = LazyLock::new(|| {
     Arc::new(AtomicI16::new(2100))
 });
-static HEAT_ON: Lazy<Arc<AtomicBool>> = Lazy::new(|| {
+static HEAT_ON: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| {
     Arc::new(AtomicBool::new(false))
 });
-static INPUT: Lazy<Arc<Mutex<String>>> = Lazy::new(|| {
+static INPUT: LazyLock<Arc<Mutex<String>>> = LazyLock::new(|| {
     Arc::new(Mutex::new(String::new()))
 });
-static DEVICE_STATE: Lazy<Arc<DeviceState>> = Lazy::new(|| {
+static DEVICE_STATE: LazyLock<Arc<DeviceState>> = LazyLock::new(|| {
     Arc::new(DeviceState::new())
 });
 

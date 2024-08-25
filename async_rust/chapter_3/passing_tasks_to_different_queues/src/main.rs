@@ -2,11 +2,11 @@ use std::{future::Future, panic::catch_unwind, thread};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
-
+use std::sync::LazyLock;
 
 use async_task::{Runnable, Task};
 use futures_lite::future;
-use once_cell::sync::Lazy;
+
 
 
 #[derive(Debug, Clone, Copy)]
@@ -26,7 +26,7 @@ where
     F: Future<Output = T> + Send + 'static + FutureOrderLabel,
     T: Send + 'static,
 {
-    static HIGH_QUEUE: Lazy<flume::Sender<Runnable>> = Lazy::new(|| {
+    static HIGH_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
         let (tx, rx) = flume::unbounded::<Runnable>();
         for _ in 0..2 {
             let receiver = rx.clone();
@@ -39,7 +39,7 @@ where
         tx
     });
 
-    static LOW_QUEUE: Lazy<flume::Sender<Runnable>> = Lazy::new(|| {
+    static LOW_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
         let (tx, rx) = flume::unbounded::<Runnable>();
         for _ in 0..1 {
             let receiver = rx.clone();

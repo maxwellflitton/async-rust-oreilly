@@ -2,11 +2,10 @@ use std::{future::Future, panic::catch_unwind, thread};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use std::time::Duration;
-
+use std::sync::LazyLock;
 
 use async_task::{Runnable, Task};
 use futures_lite::future;
-use once_cell::sync::Lazy;
 use flume::{Sender, Receiver};
 
 
@@ -22,14 +21,14 @@ where
     F: Future<Output = T> + Send + 'static,
     T: Send + 'static,
 {
-    static HIGH_CHANNEL: Lazy<(Sender<Runnable>, Receiver<Runnable>)> = Lazy::new(|| 
+    static HIGH_CHANNEL: LazyLock<(Sender<Runnable>, Receiver<Runnable>)> = LazyLock::new(|| 
     {flume::unbounded::<Runnable>()}
     );
-    static LOW_CHANNEL: Lazy<(Sender<Runnable>, Receiver<Runnable>)> = Lazy::new(|| 
+    static LOW_CHANNEL: LazyLock<(Sender<Runnable>, Receiver<Runnable>)> = LazyLock::new(|| 
         {flume::unbounded::<Runnable>()}
     );
 
-    static HIGH_QUEUE: Lazy<flume::Sender<Runnable>> = Lazy::new(|| {
+    static HIGH_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
         let high_num = std::env::var("HIGH_NUM").unwrap().parse::<usize>().unwrap();
         for _ in 0..high_num {
             let high_receiver = HIGH_CHANNEL.1.clone();
@@ -57,7 +56,7 @@ where
         HIGH_CHANNEL.0.clone()
     });
 
-    static LOW_QUEUE: Lazy<flume::Sender<Runnable>> = Lazy::new(|| {
+    static LOW_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
         let low_num = std::env::var("LOW_NUM").unwrap().parse::<usize>().unwrap();
         for _ in 0..low_num {
             let high_receiver = HIGH_CHANNEL.1.clone();
