@@ -1,10 +1,4 @@
 
-
-
-// Pin<Box<dyn Future<Output = T> + Send + 'static>>
-
-
-
 fn main() {
     println!("Hello, world!");
 }
