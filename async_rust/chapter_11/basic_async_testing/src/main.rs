@@ -48,6 +48,7 @@ mod get_team_processes_tests {
 
     #[test]
     fn do_something_fail() {
+        // Arrange
         let mut handle = MockDatabaseHandler::new();
 
         handle.expect_get_result()
@@ -61,7 +62,10 @@ mod get_team_processes_tests {
         let runtime = tokio::runtime::Builder::new_current_thread().enable_all()
                                                                    .build()
                                                                    .unwrap();
+        // Act
         let outcome = runtime.block_on(do_something(handle, 4));
+
+        // Assert
         assert_eq!(outcome, Err("result is too big".to_string()));
     }
 
