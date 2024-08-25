@@ -1,10 +1,4 @@
 
-
-
-// Pin<Box<dyn Future<Output = T> + Send + 'static>>
-
-
-
 fn main() {
     println!("Hello, world!");
 }
@@ -21,7 +15,7 @@ mod tests {
         let runtime = Builder::new_current_thread().enable_all().build().unwrap();
         let (sender, mut receiver) = mpsc::channel::<i32>(5);
 
-        let reciever = runtime.spawn(async move {
+        let receiver = runtime.spawn(async move {
             let mut i = 0;
             while let Some(msg) = receiver.recv().await {
                 assert_eq!(msg, i);
