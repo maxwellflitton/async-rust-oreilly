@@ -1,4 +1,0 @@
-
-
-cargo run -p server
-
