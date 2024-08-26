@@ -1,0 +1,11 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+data_layer = { path = "../data_layer" }
+async_runtime = { path = "../async_runtime" }
+
+[profile.release]
+opt-level = 'z'

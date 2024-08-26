@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-package data;
-
-message DataMessage {
-  string message = 1;
-}
