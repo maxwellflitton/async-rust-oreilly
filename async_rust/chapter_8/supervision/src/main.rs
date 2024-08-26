@@ -3,7 +3,7 @@ use tokio::{sync::{
     mpsc::{Receiver, Sender},
     oneshot,
 }, task::JoinHandle};
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 use serde_json;
 use tokio::fs::File;
@@ -230,7 +230,7 @@ async fn heartbeat_actor(mut receiver: Receiver<ActorType>) {
 }
 
 
-static ROUTER_SENDER: OnceCell<Sender<RoutingMessage>> = OnceCell::new();
+static ROUTER_SENDER: OnceLock<Sender<RoutingMessage>> = OnceLock::new();
 
 
 async fn router(mut receiver: Receiver<RoutingMessage>) {

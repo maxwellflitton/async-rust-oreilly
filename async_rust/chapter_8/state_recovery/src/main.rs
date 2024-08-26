@@ -3,7 +3,7 @@ use tokio::sync::{
     mpsc::{Receiver, Sender},
     oneshot,
 };
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 // ====> backup
 use serde_json;
@@ -147,7 +147,7 @@ async fn writer_actor(mut receiver: Receiver<WriterLogMessage>) -> io::Result<()
 }
 
 
-static ROUTER_SENDER: OnceCell<Sender<RoutingMessage>> = OnceCell::new();
+static ROUTER_SENDER: OnceLock<Sender<RoutingMessage>> = OnceLock::new();
 
 
 async fn router(mut receiver: Receiver<RoutingMessage>) {
