@@ -3,7 +3,7 @@ use tokio::sync::{
     mpsc::{Receiver, Sender},
     oneshot,
 };
-use once_cell::sync::OnceCell;
+use std::sync::OnceLock;
 
 
 struct SetKeyValueMessage {
@@ -57,7 +57,7 @@ async fn key_value_actor(mut receiver: Receiver<KeyValueMessage>) {
 }
 
 
-static ROUTER_SENDER: OnceCell<Sender<RoutingMessage>> = OnceCell::new();
+static ROUTER_SENDER: OnceLock<Sender<RoutingMessage>> = OnceLock::new();
 
 
 async fn router(mut receiver: Receiver<RoutingMessage>) {
