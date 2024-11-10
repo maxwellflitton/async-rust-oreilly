@@ -48,10 +48,9 @@ impl Future for SimpleFuture {
 
 
 fn main() {
-    let mut first = SelfReferential::new("first".to_string());
-    let mut second = SelfReferential::new("second".to_string());
-    unsafe {
-        ptr::swap(&mut first, &mut second);
-    }
-    first.print();
+    let first = SelfReferential::new("first".to_string());
+    let moved_first = first; // Move the struct
+    // The original `first` is no longer valid; this might invalidate pointers 
+    //if pinning isn't used
+    moved_first.print();
 }
