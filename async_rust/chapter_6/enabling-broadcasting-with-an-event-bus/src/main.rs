@@ -24,9 +24,10 @@ impl<T: Clone + Send> EventBus<T> {
         let mut chamber = self.chamber.lock().await;
         let id  = self.count.fetch_add(1, Ordering::SeqCst);
         chamber.insert(id, VecDeque::new());
+        std::mem::drop(chamber); // <- drop chamber to avoid self.clone()
         EventHandle {
             id,
-            event_bus: Arc::new(self),
+            event_bus: self.into(), // <- no need to clone!
         }
     }
     pub fn unsubscribe(&self, id: u32) {
