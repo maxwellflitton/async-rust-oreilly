@@ -21,7 +21,7 @@ trait FutureOrderLabel: Future {
 }
 
 
-fn spawn_task<F, T>(future: F) -> Task<T>
+fn spawn_task<F, T>(future: F, init: bool) -> Task<T>
 where
     F: Future<Output = T> + Send + 'static + FutureOrderLabel,
     T: Send + 'static,
@@ -33,6 +33,7 @@ where
         {flume::unbounded::<Runnable>()}
     );
     static HIGH_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
+        println!("init HIGH_QUEUE");
         for _ in 0..2 {
             let high_receiver = HIGH_CHANNEL.1.clone();
             let low_receiver = LOW_CHANNEL.1.clone();
@@ -45,6 +46,7 @@ where
                         Err(_) => {
                             match low_receiver.try_recv() {
                                 Ok(runnable) => {
+                                    println!("Stealing task from LOW_QUEUE");
                                     let _ = catch_unwind(|| runnable.run());
                                 },
                                 Err(_) => {
@@ -59,6 +61,7 @@ where
         HIGH_CHANNEL.0.clone()
     });
     static LOW_QUEUE: LazyLock<flume::Sender<Runnable>> = LazyLock::new(|| {
+        println!("init LOW_QUEUE");
         for _ in 0..2 {
             let high_receiver = HIGH_CHANNEL.1.clone();
             let low_receiver = LOW_CHANNEL.1.clone();
@@ -71,6 +74,7 @@ where
                         Err(_) => {
                             match high_receiver.try_recv() {
                                 Ok(runnable) => {
+                                    println!("Stealing task from HIGH_QUEUE");
                                     let _ = catch_unwind(|| runnable.run());
                                 },
                                 Err(_) => {
@@ -84,6 +88,13 @@ where
         }
         LOW_CHANNEL.0.clone()
     });
+
+    // Forces the evaluation of lazy value
+    if init {
+        let _ = LazyLock::force(&HIGH_QUEUE);
+        let _ = LazyLock::force(&LOW_QUEUE);
+    };
+
     let schedule_high = |runnable| HIGH_QUEUE.send(runnable).unwrap();
     let schedule_low = |runnable| LOW_QUEUE.send(runnable).unwrap();
 
@@ -131,7 +142,7 @@ async fn async_fn() {
 
 fn main() {
     let one = CounterFuture { count: 0 , order: FutureType::High};
-    let t_one = spawn_task(one);
+    let t_one = spawn_task(one, false);
     future::block_on(t_one);
     // let one = CounterFuture { count: 0 };
     // let two = CounterFuture { count: 0 };
@@ -148,4 +159,26 @@ fn main() {
     // future::block_on(t_one);
     // future::block_on(t_two);
     // future::block_on(t_three);
+}
+
+// #[test]
+// fn test_no_task_stealing() {
+//     // Task stealing is not initiated since LOW_QUEUE was never created (lazy initialization)
+//     let one = CounterFuture { count: 0 , order: FutureType::High};
+//     let two = CounterFuture { count: 0 , order: FutureType::High};
+//     let t_one = spawn_task(one, false);
+//     let t_two = spawn_task(two, false);
+//     future::block_on(t_one);
+//     future::block_on(t_two);
+// }
+
+#[test]
+fn test_with_task_stealing() {
+    // Task stealing is initiated since both queues are initialized by force
+    let one = CounterFuture { count: 0 , order: FutureType::High};
+    let two = CounterFuture { count: 0 , order: FutureType::High};
+    let t_one = spawn_task(one, true);
+    let t_two = spawn_task(two, true);
+    future::block_on(t_one);
+    future::block_on(t_two);
 }
