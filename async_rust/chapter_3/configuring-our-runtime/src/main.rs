@@ -180,6 +180,7 @@ impl Runtime {
         self
     }
     pub fn run(&self) {
+        // DANGER: set_var is not safe to use in multithreaded environments
         std::env::set_var("HIGH_NUM", self.high_num.to_string());
         std::env::set_var("LOW_NUM", self.low_num.to_string());
     
