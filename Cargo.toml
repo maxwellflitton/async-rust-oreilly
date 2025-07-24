@@ -1,0 +1,27 @@
+[workspace]
+resolver = "2"
+members = [
+    "async_rust/chapter_1/build_own_runtime",
+    "async_rust/chapter_1/configuring_our_runtime",
+    "async_rust/chapter_1/creating_our_own_join_marco",
+    "async_rust/chapter_1/increasing_workers_and_queues",
+    "async_rust/chapter_1/passing_tasks_to_different_queues",
+    "async_rust/chapter_1/refactoring_our_spawn_task_function",
+    "async_rust/chapter_1/task_stealing",
+    "async_rust/chapter_01/communicating_with_processes",
+    "async_rust/chapter_01/fib_blocking",
+    "async_rust/chapter_01/improving_http_request_performance_with_async",
+    "async_rust/chapter_01/interacting_with_processes",
+    "async_rust/chapter_01/introduction_to_processes",
+]
+
+[workspace.dependencies]
+async-task = "4.7.1"
+futures-lite = "2.6.0"
+once_cell = "1.21.3"
+flume = "0.11.1"
+tempfile = "3.20.0"
+tokio = { version = "1.46.1", features = ["full"] }
+reqwest = { version = "0.12.22", features = ["json"] }
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.141"

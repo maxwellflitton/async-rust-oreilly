@@ -72,7 +72,7 @@ where
                 }
             });
         }
-        LOW_CHANNELs.0.clone()
+        LOW_CHANNEL.0.clone()
     });
     
     let schedule_high = |runnable| HIGH_QUEUE.send(runnable).unwrap();
